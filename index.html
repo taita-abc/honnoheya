@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ほんのへや</title>
+
+<!-- PWA / home screen icon settings -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#8a5f38">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ほんのへや">
+
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- ================= SHELF ================= -->
+  <div id="shelfScreen">
+    <div class="room-beam"></div>
+    <div class="room-scroll">
+      <div class="app-logo">
+        <img src="logo.png" alt="ほんのへや" class="logo-img">
+      </div>
+      <div class="shelves-wrap">
+        <div class="shelf-group">
+          <img class="shelf-label" src="label-ehon.png" alt="えほん">
+          <div class="shelf-board" id="shelfBoardBooks"></div>
+        </div>
+        <div class="shelf-group">
+          <img class="shelf-label" src="label-album.png" alt="アルバム">
+          <div class="shelf-board" id="shelfBoardPhotos"></div>
+        </div>
+      </div>
+      <div class="shelf-footer" id="shelfFooter">ぷろとたいぷ v0.6</div>
+    </div>
+    <div class="room-baseboard"></div>
+  </div>
+
+  <!-- ================= READER ================= -->
+  <div id="readerScreen">
+    <div class="reader-top">
+      <button class="close-btn" id="closeBtn">←</button>
+      <div class="page-indicator"><span id="pageNum">1</span> / <span id="pageTotal">17</span></div>
+      <div style="width:38px"></div>
+    </div>
+    <div class="stage-viewport" id="stageViewport">
+      <div class="stage-track" id="stageTrack"></div>
+      <div class="end-card" id="endCard">
+        <p>おしまい 🌳</p>
+        <button id="backToShelfBtn">ほんだなに もどる</button>
+      </div>
+    </div>
+    <div class="dots" id="dots"></div>
+  </div>
+
+</div>
+
+<script src="books-data.js"></script>
+<script src="app.js"></script>
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./service-worker.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,212 @@
+:root{
+    --cream: #FBEFDD;
+    --cream-deep: #F3E1C4;
+    --shelf-wood: #C99A6B;
+    --shelf-wood-dark: #A67849;
+    --momo-rose: #F1A8AC;
+    --momo-rose-deep: #D9787E;
+    --forest-green: #8FAE7A;
+    --ink: #6B4A3A;
+    --ink-soft: #8A6A57;
+  }
+  *{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body{
+    margin:0; padding:0; height:100%; overflow:hidden;
+    background: var(--cream);
+    font-family: "Hiragino Maru Gothic ProN", "Rounded Mplus 1c", "M PLUS Rounded 1c", "Yu Gothic", sans-serif;
+    color: var(--ink);
+    -webkit-user-select:none; user-select:none;
+  }
+  #app{ position:relative; width:100vw; height:100vh; height:100dvh; }
+
+  /* ---------- SHELF SCREEN ---------- */
+  #shelfScreen{
+    position:absolute; inset:0;
+    display:flex; flex-direction:column; align-items:stretch;
+    background:
+      radial-gradient(circle at 20% 10%, #FFF7EA 0%, transparent 45%),
+      radial-gradient(circle at 85% 85%, #FCE3D8 0%, transparent 50%),
+      var(--cream);
+    transition: opacity .35s ease;
+  }
+  .room-beam{
+    flex-shrink:0; width:100%; height: 26px;
+    background: linear-gradient(180deg, #8a5f38, #6b4526);
+    box-shadow: 0 6px 10px rgba(60,35,10,0.35);
+    position:relative; z-index:2;
+  }
+  .room-baseboard{
+    flex-shrink:0; width:100%; height: 14px;
+    background: linear-gradient(0deg, #8a5f38, #6b4526);
+    box-shadow: 0 -6px 10px rgba(60,35,10,0.3);
+    position:relative; z-index:2;
+  }
+  .room-scroll{
+    flex:1; min-height:0; width:100%;
+    overflow-y:auto; -webkit-overflow-scrolling:touch;
+    display:flex; flex-direction:column; align-items:center;
+  }
+  .app-logo{
+    display:flex; justify-content:center; margin: 0;
+  }
+  .logo-img{
+    width: min(78vw, 320px); height:auto; display:block;
+  }
+  .shelf-sub{
+    font-size:12.5px; color: var(--ink-soft); margin-bottom: 14px;
+  }
+  .shelves-wrap{
+    flex:1; width:100%; display:flex; flex-direction:column;
+    justify-content:space-evenly; align-items:center; gap: 18px;
+    padding: 0 24px;
+  }
+  .shelf-group{
+    width:100%; display:flex; flex-direction:column; align-items:center;
+  }
+  .shelf-label{
+    height: 40px; width:auto; margin-bottom:8px;
+  }
+
+  .shelf-board{
+    position:relative;
+    width: min(400px, 88vw); min-height: 60px;
+    padding: 22px 18px 0;
+    background-image:
+      repeating-linear-gradient(180deg, rgba(255,255,255,0.10) 0px, rgba(255,255,255,0.10) 1px, transparent 1px, transparent 7px),
+      repeating-linear-gradient(180deg, rgba(70,42,16,0.18) 0px, rgba(70,42,16,0.18) 1px, transparent 1px, transparent 11px),
+      linear-gradient(180deg, rgba(255,241,220,0.4) 0%, rgba(255,241,220,0.4) 20%, #8a5f38 20%, #6b4526 100%),
+      linear-gradient(180deg, var(--shelf-wood), var(--shelf-wood-dark));
+    background-size: 100% 100%, 100% 100%, 100% 34px, 100% 100%;
+    background-position: top left, top left, bottom left, top left;
+    background-repeat: repeat, repeat, no-repeat, no-repeat;
+    border-radius: 14px 14px 6px 6px;
+    box-shadow:
+      inset 0 12px 16px -8px rgba(55,32,10,0.5),
+      inset 7px 0 12px -9px rgba(55,32,10,0.35),
+      inset -7px 0 12px -9px rgba(55,32,10,0.35),
+      0 14px 0 -6px rgba(0,0,0,0.08),
+      0 20px 30px rgba(120,80,40,0.18);
+    display:flex; gap: 16px; flex-wrap:nowrap;
+    justify-content: center; justify-content: safe center;
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .shelf-board::-webkit-scrollbar{ display:none; }
+  .shelf-board > div{ flex: 0 0 auto; }
+  .shelf-board:empty{
+    background: transparent; box-shadow:none; padding:0; min-height:0;
+  }
+  .shelf-board:not(:empty)::after{
+    content:""; position:absolute; left:10px; right:10px; bottom:10px; height:8px;
+    background: rgba(0,0,0,0.12); border-radius: 4px; filter: blur(1px);
+  }
+  .book-cover{
+    width: 112px; height: 112px; border-radius: 10px; overflow:hidden;
+    box-shadow: 0 10px 18px rgba(90,60,30,0.35), inset 0 0 0 3px rgba(255,255,255,0.5);
+    background: #fff; cursor:pointer; position:relative;
+    transform: translateY(-6px);
+    transition: transform .18s ease;
+  }
+  .book-cover:active{ transform: translateY(-2px) scale(0.97); }
+  .book-cover img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .book-cover .spine{
+    position:absolute; left:0; top:0; bottom:0; width:8px;
+    background: linear-gradient(90deg, rgba(0,0,0,0.18), rgba(0,0,0,0));
+  }
+  .book-label{
+    text-align:center; margin: 0; font-size:12.5px; font-weight:700;
+    color: #FBF1DE; text-shadow: 0 1px 1px rgba(40,20,5,0.4);
+    width: 112px; height: 30px; display:flex; align-items:center; justify-content:center;
+  }
+  .book-label span{
+    display:inline-block; max-width:100%;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+
+  @media (orientation: landscape){
+    .app-logo{ margin: 2px 0; }
+    .logo-img{ width: min(50vw, 220px); }
+    .shelves-wrap{
+      flex-direction: row; justify-content:center; align-items:flex-start;
+      gap: 20px; padding: 0 16px;
+    }
+    .shelf-group{ width:auto; flex: 1 1 0; max-width: 48%; }
+    .shelf-label{ height: 30px; margin-bottom:6px; }
+    .shelf-board{ width: 100%; padding: 16px 14px 0; }
+    .book-cover{ width: 92px; height: 92px; }
+    .book-label{ width: 92px; }
+  }
+  .shelf-footer{
+    padding: 14px 0 max(18px, env(safe-area-inset-bottom));
+    font-size:11px; color: var(--ink-soft); opacity:.7;
+  }
+
+  /* ---------- READER SCREEN ---------- */
+  #readerScreen{
+    position:absolute; inset:0; background: var(--cream-deep);
+    display:none;
+    opacity:0; transition: opacity .3s ease;
+  }
+  #readerScreen.visible{ display:block; opacity:1; }
+  .reader-top{
+    position:absolute; top:0; left:0; right:0; z-index:20;
+    display:flex; align-items:center; justify-content:space-between;
+    padding: max(14px, env(safe-area-inset-top)) 16px 10px;
+  }
+  .close-btn{
+    width:38px; height:38px; border-radius:50%; background:rgba(255,255,255,0.8);
+    display:flex; align-items:center; justify-content:center; font-size:18px; color:var(--ink);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.12); cursor:pointer; border:none;
+  }
+  .page-indicator{
+    background: rgba(255,255,255,0.85); padding:5px 14px; border-radius:999px;
+    font-size:12.5px; font-weight:700; color: var(--ink-soft);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  }
+
+  .reader-top, .dots{ transition: opacity .25s ease; }
+  #readerScreen.landscape-mode.ui-hidden .reader-top,
+  #readerScreen.landscape-mode.ui-hidden .dots{
+    opacity:0; pointer-events:none;
+  }
+
+  /* ---------- SWIPE / SLIDE STAGE ---------- */
+  .stage-viewport{
+    position:absolute; inset:0; overflow:hidden; touch-action: none;
+  }
+  .stage-track{
+    display:flex; height:100%; will-change: transform;
+  }
+  .slide{
+    flex: 0 0 auto; height:100%;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .page-square{
+    background: var(--cream-deep);
+  }
+  .page-square img{ width:100%; height:100%; object-fit:contain; display:block; background: var(--cream-deep); }
+  .spread-pair{
+    display:flex;
+  }
+  .spread-half{
+    background: var(--cream-deep); overflow:hidden;
+  }
+  .spread-half img{ width:100%; height:100%; object-fit:contain; display:block; background: var(--cream-deep); }
+
+  .dots{
+    position:absolute; left:0; right:0; bottom: max(10px, env(safe-area-inset-bottom)); z-index:20;
+    display:flex; justify-content:center; gap:4px;
+  }
+  .dot{ width:5px; height:5px; border-radius:50%; background: rgba(107,74,58,0.25); }
+  .dot.on{ background: var(--momo-rose-deep); }
+  .end-card{
+    position:absolute; inset:0; z-index:30; display:none;
+    align-items:center; justify-content:center; flex-direction:column; gap:16px;
+    background: rgba(251,239,221,0.96);
+  }
+  .end-card.visible{ display:flex; }
+  .end-card p{ font-size:16px; font-weight:700; }
+  .end-card button{
+    padding:11px 28px; border-radius:999px; border:none; font-size:14px; font-weight:700;
+    background: var(--forest-green); color:#fff; box-shadow:0 6px 14px rgba(0,0,0,0.15);
+  }
