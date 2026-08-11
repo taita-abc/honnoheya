@@ -18,6 +18,16 @@ const shelfBoardPhotos = document.getElementById('shelfBoardPhotos');
 const shelfFooter = document.getElementById('shelfFooter');
 const stageViewport = document.getElementById('stageViewport');
 const stageTrack = document.getElementById('stageTrack');
+const pageIndicatorBtn = document.getElementById('pageIndicatorBtn');
+const pageSliderWrap = document.getElementById('pageSliderWrap');
+const pageSlider = document.getElementById('pageSlider');
+const jumpModal = document.getElementById('jumpModal');
+const jumpInput = document.getElementById('jumpInput');
+const jumpCancelBtn = document.getElementById('jumpCancelBtn');
+const jumpGoBtn = document.getElementById('jumpGoBtn');
+
+// pages beyond this count also get a drag-slider in addition to tap-to-jump
+const SLIDER_PAGE_THRESHOLD = 30;
 
 function requestAppFullscreen(){
   const el = document.documentElement;
@@ -176,6 +186,12 @@ function updateIndicator(){
   pageTotalEl.textContent = total;
 }
 
+function updateSlider(){
+  pageSlider.max = Math.max(0, slideCount-1);
+  pageSlider.value = index;
+  pageSliderWrap.classList.toggle('visible', total > SLIDER_PAGE_THRESHOLD);
+}
+
 function syncStateFromIndex(){
   if(isLandscape()){
     spreadIdx = index;
@@ -187,6 +203,7 @@ function syncStateFromIndex(){
   }
   updateIndicator();
   updateDots();
+  updateSlider();
   endCard.classList.remove('visible');
 }
 
@@ -262,6 +279,45 @@ function goPrev(){
 
 document.getElementById('closeBtn').addEventListener('click', closeReader);
 document.getElementById('backToShelfBtn').addEventListener('click', closeReader);
+
+/* ---------- page jump (tap page number) ---------- */
+function openJumpModal(){
+  jumpInput.min = 1;
+  jumpInput.max = total;
+  jumpInput.value = current + 1;
+  jumpModal.classList.add('visible');
+  setTimeout(()=>{ jumpInput.focus(); jumpInput.select(); }, 50);
+}
+function closeJumpModal(){
+  jumpModal.classList.remove('visible');
+}
+function doJump(){
+  let n = parseInt(jumpInput.value, 10);
+  closeJumpModal();
+  if(isNaN(n)) return;
+  n = Math.max(1, Math.min(total, n));
+  const pageIdx = n - 1;
+  if(isLandscape()){
+    goToIndex(spreadIndexForPage(pageIdx));
+  } else {
+    goToIndex(pageIdx);
+  }
+}
+pageIndicatorBtn.addEventListener('click', openJumpModal);
+jumpCancelBtn.addEventListener('click', closeJumpModal);
+jumpGoBtn.addEventListener('click', doJump);
+jumpInput.addEventListener('keydown', e=>{
+  if(e.key === 'Enter') doJump();
+  if(e.key === 'Escape') closeJumpModal();
+});
+jumpModal.addEventListener('click', e=>{
+  if(e.target === jumpModal) closeJumpModal();
+});
+
+/* ---------- page slider (long albums) ---------- */
+pageSlider.addEventListener('input', e=>{
+  goToIndex(parseInt(e.target.value, 10), false);
+});
 
 /* ---------- real-time drag-follow swipe, with tap-to-turn and elastic edges ---------- */
 let dragging = false;

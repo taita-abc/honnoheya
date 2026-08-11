@@ -44,7 +44,7 @@
   <div id="readerScreen">
     <div class="reader-top">
       <button class="close-btn" id="closeBtn">←</button>
-      <div class="page-indicator"><span id="pageNum">1</span> / <span id="pageTotal">17</span></div>
+      <button class="page-indicator" id="pageIndicatorBtn"><span id="pageNum">1</span> / <span id="pageTotal">17</span></button>
       <div style="width:38px"></div>
     </div>
     <div class="stage-viewport" id="stageViewport">
@@ -55,6 +55,21 @@
       </div>
     </div>
     <div class="dots" id="dots"></div>
+    <div class="page-slider-wrap" id="pageSliderWrap">
+      <input type="range" id="pageSlider" class="page-slider" min="0" max="0" value="0" step="1">
+    </div>
+  </div>
+
+  <!-- ================= PAGE JUMP MODAL ================= -->
+  <div id="jumpModal" class="jump-modal">
+    <div class="jump-modal-card">
+      <p class="jump-modal-title">ページ いどう</p>
+      <input type="number" id="jumpInput" class="jump-input" inputmode="numeric" min="1">
+      <div class="jump-modal-buttons">
+        <button id="jumpCancelBtn" class="jump-btn jump-btn-cancel">やめる</button>
+        <button id="jumpGoBtn" class="jump-btn jump-btn-go">いどう</button>
+      </div>
+    </div>
   </div>
 
 </div>
