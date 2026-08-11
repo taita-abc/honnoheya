@@ -1,6 +1,6 @@
 // このバージョン番号(v1)は、更新のたびに v2, v3... と増やしてください。
 // 増やすことで、ブラウザが古いキャッシュを捨てて新しいファイルを取りに行きます。
-const CACHE_NAME = 'honnoheya-v2';
+const CACHE_NAME = 'honnoheya-v3';
 
 const ASSETS = [
   './',
