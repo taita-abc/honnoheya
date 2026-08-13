@@ -72,12 +72,6 @@ function renderBookCover(book){
   label.appendChild(labelSpan);
   wrap.appendChild(cover);
   wrap.appendChild(label);
-  if(book.series){
-    const seriesEl = document.createElement('div');
-    seriesEl.className = 'book-series';
-    seriesEl.textContent = book.series;
-    wrap.appendChild(seriesEl);
-  }
   return wrap;
 }
 
@@ -86,7 +80,7 @@ const photoItems = BOOKS.filter(b => b.type === 'photos');
 bookItems.forEach(b => shelfBoardBooks.appendChild(renderBookCover(b)));
 photoItems.forEach(b => shelfBoardPhotos.appendChild(renderBookCover(b)));
 
-shelfFooter.textContent = `v1.7 ・ ぞうちくちゅう ・ えほん${bookItems.length}さつ / アルバム${photoItems.length}さつ`;
+shelfFooter.textContent = `v1.8 ・ ぞうちくちゅう ・ えほん${bookItems.length}さつ / アルバム${photoItems.length}さつ`;
 
 // ---- real-book page pairing: front cover alone, back cover alone, everything
 // else paired sequentially; a leftover odd middle page pairs with a blank
@@ -265,7 +259,7 @@ function goToIndex(newIndex, animate){
   syncStateFromIndex();
 }
 
-function applyLayoutMode(){
+function applyLayoutMode(exact){
   const landscape = isLandscape();
   readerScreen.classList.toggle('landscape-mode', landscape);
   readerScreen.classList.toggle('ui-hidden', landscape);
@@ -276,8 +270,14 @@ function applyLayoutMode(){
   buildSlides();
   if(isLandscape()){
     index = spreadIndexForPage(targetPageForLanding);
+  } else if(exact){
+    // land on the exact page (used when opening/resuming a book), not the
+    // spread's left page
+    index = targetPageForLanding;
   } else {
     // land on the left/lower page of whatever spread we were viewing
+    // (used when switching orientation mid-read, where landing within the
+    // spread is ambiguous)
     index = spreads.length ? spreads[spreadIndexForPage(targetPageForLanding)][0] : targetPageForLanding;
   }
   setTranslate(-index*stageWidth(), false);
@@ -298,7 +298,7 @@ async function openReader(bookId){
   IMG_DIMS = await Promise.all(PAGES.map(loadImageDims));
   readerLoading.classList.remove('visible');
   updateForceLandscapeVisual();
-  applyLayoutMode();
+  applyLayoutMode(true);
   shelfScreen.style.opacity = '0';
   setTimeout(()=>{ shelfScreen.style.display='none'; }, 300);
   readerScreen.classList.add('visible');
