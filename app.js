@@ -80,7 +80,7 @@ const photoItems = BOOKS.filter(b => b.type === 'photos');
 bookItems.forEach(b => shelfBoardBooks.appendChild(renderBookCover(b)));
 photoItems.forEach(b => shelfBoardPhotos.appendChild(renderBookCover(b)));
 
-shelfFooter.textContent = `v1.8 ・ ぞうちくちゅう ・ えほん${bookItems.length}さつ / アルバム${photoItems.length}さつ`;
+shelfFooter.textContent = `v1.9 ・ ぞうちくちゅう ・ えほん${bookItems.length}さつ / アルバム${photoItems.length}さつ`;
 
 // ---- real-book page pairing: front cover alone, back cover alone, everything
 // else paired sequentially; a leftover odd middle page pairs with a blank
@@ -446,6 +446,7 @@ function localPanDelta(dxScreen, dyScreen){
 }
 
 stageViewport.addEventListener('touchstart', e=>{
+  if(e.target.closest && e.target.closest('.end-card')) return; // let buttons handle their own tap
   if(e.touches.length === 2){
     pinching = true; dragging = false; panning = false;
     pinchStartDist = touchDist(e.touches[0], e.touches[1]);
