@@ -77,7 +77,7 @@ const photoItems = BOOKS.filter(b => b.type === 'photos');
 bookItems.forEach(b => shelfBoardBooks.appendChild(renderBookCover(b)));
 photoItems.forEach(b => shelfBoardPhotos.appendChild(renderBookCover(b)));
 
-shelfFooter.textContent = `v2.0 ・ ぞうちくちゅう ・ えほん${bookItems.length}さつ / アルバム${photoItems.length}さつ`;
+shelfFooter.textContent = `v2.1 ・ ぞうちくちゅう ・ えほん${bookItems.length}さつ / アルバム${photoItems.length}さつ`;
 
 // ---- real-book page pairing: front cover alone, back cover alone, everything
 // else paired sequentially; a leftover odd middle page pairs with a blank
@@ -286,14 +286,17 @@ async function openReader(bookId){
   spreadIdx = spreadIndexForPage(current);
   index = current;
   endCard.classList.remove('visible');
+  shelfScreen.style.opacity = '0';
+  setTimeout(()=>{ shelfScreen.style.display='none'; }, 300);
+  // make the reader screen visible (and correctly sized) *before* any layout
+  // math runs, so buildSlides() always measures the real, current-orientation
+  // dimensions instead of a display:none fallback
+  readerScreen.classList.add('visible');
   readerLoading.classList.add('visible');
   IMG_DIMS = await Promise.all(PAGES.map(loadImageDims));
   readerLoading.classList.remove('visible');
   updateForceLandscapeVisual();
   applyLayoutMode(true);
-  shelfScreen.style.opacity = '0';
-  setTimeout(()=>{ shelfScreen.style.display='none'; }, 300);
-  readerScreen.classList.add('visible');
 }
 function closeReader(){
   readerScreen.classList.remove('visible');
