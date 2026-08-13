@@ -25,9 +25,13 @@ const jumpModal = document.getElementById('jumpModal');
 const jumpInput = document.getElementById('jumpInput');
 const jumpCancelBtn = document.getElementById('jumpCancelBtn');
 const jumpGoBtn = document.getElementById('jumpGoBtn');
+const orientToggleBtn = document.getElementById('orientToggleBtn');
 
 // pages beyond this count also get a drag-slider in addition to tap-to-jump
 const SLIDER_PAGE_THRESHOLD = 30;
+
+// manual たて/よこ override, for when the device's own rotation lock is on
+let manualLandscape = false;
 
 function requestAppFullscreen(){
   const el = document.documentElement;
@@ -94,7 +98,17 @@ function spreadIndexForPage(pageIdx){
   return idx === -1 ? 0 : idx;
 }
 function isLandscape(){
+  return manualLandscape || window.matchMedia('(orientation: landscape)').matches;
+}
+function deviceIsNaturallyLandscape(){
   return window.matchMedia('(orientation: landscape)').matches;
+}
+function updateForceLandscapeVisual(){
+  // only need to visually rotate when we're forcing landscape onto a
+  // viewport that isn't already landscape-shaped on its own
+  const needsRotate = manualLandscape && !deviceIsNaturallyLandscape();
+  readerScreen.classList.toggle('force-landscape', needsRotate);
+  orientToggleBtn.classList.toggle('active', manualLandscape);
 }
 
 let IMG_DIMS = []; // {w,h} per page, preloaded once per book so we can size slides synchronously
@@ -256,6 +270,7 @@ async function openReader(bookId){
   index = 0;
   endCard.classList.remove('visible');
   IMG_DIMS = await Promise.all(PAGES.map(loadImageDims));
+  updateForceLandscapeVisual();
   applyLayoutMode();
   shelfScreen.style.opacity = '0';
   setTimeout(()=>{ shelfScreen.style.display='none'; }, 300);
@@ -279,6 +294,11 @@ function goPrev(){
 
 document.getElementById('closeBtn').addEventListener('click', closeReader);
 document.getElementById('backToShelfBtn').addEventListener('click', closeReader);
+orientToggleBtn.addEventListener('click', ()=>{
+  manualLandscape = !manualLandscape;
+  updateForceLandscapeVisual();
+  applyLayoutMode();
+});
 
 /* ---------- page jump (tap page number) ---------- */
 function openJumpModal(){
@@ -353,9 +373,16 @@ function applyZoomTransform(animate){
   el.style.transform = `scale(${zoomScale}) translate(${zoomX}px, ${zoomY}px)`;
 }
 function clampPan(){
-  const maxOffset = 90 * (zoomScale - 1);
-  zoomX = Math.max(-maxOffset, Math.min(maxOffset, zoomX));
-  zoomY = Math.max(-maxOffset, Math.min(maxOffset, zoomY));
+  const el = currentSlideEl();
+  const contentEl = el ? (el.firstElementChild || el) : null;
+  const w = contentEl ? contentEl.offsetWidth : stageWidth();
+  const h = contentEl ? contentEl.offsetHeight : stageHeight();
+  const vw = stageWidth();
+  const vh = stageHeight();
+  const maxOffsetX = Math.max(0, w/2 - vw/(2*zoomScale));
+  const maxOffsetY = Math.max(0, h/2 - vh/(2*zoomScale));
+  zoomX = Math.max(-maxOffsetX, Math.min(maxOffsetX, zoomX));
+  zoomY = Math.max(-maxOffsetY, Math.min(maxOffsetY, zoomY));
 }
 function resetZoom(){
   const el = currentSlideEl();
@@ -373,6 +400,21 @@ function toggleZoomAt(){
 
 function currentTranslate(){
   return -index*stageWidth();
+}
+
+// when the reader is visually rotated 90deg (manual たて/よこ override on a
+// device whose real screen didn't rotate), real touch X/Y need remapping so
+// swipes still feel natural relative to what's on screen: a real vertical
+// finger movement becomes the page-turn axis, and a real horizontal
+// movement becomes the pan axis.
+function isRotatedView(){
+  return readerScreen.classList.contains('force-landscape');
+}
+function localSwipeX(clientX, clientY){
+  return isRotatedView() ? clientY : clientX;
+}
+function localPanDelta(dxScreen, dyScreen){
+  return isRotatedView() ? { dx: dyScreen, dy: -dxScreen } : { dx: dxScreen, dy: dyScreen };
 }
 
 stageViewport.addEventListener('touchstart', e=>{
@@ -403,8 +445,8 @@ stageViewport.addEventListener('touchstart', e=>{
 
   dragging = true;
   moved = false;
-  dragStartX = t.clientX;
-  lastMoveX = t.clientX;
+  dragStartX = localSwipeX(t.clientX, t.clientY);
+  lastMoveX = dragStartX;
   lastMoveT = now;
   velocity = 0;
   dragBaseTranslate = currentTranslate();
@@ -421,20 +463,22 @@ stageViewport.addEventListener('touchmove', e=>{
   }
   if(panning){
     const t = e.touches[0];
-    zoomX = panStartOffsetX + (t.clientX - panStartX) / zoomScale;
-    zoomY = panStartOffsetY + (t.clientY - panStartY) / zoomScale;
+    const d = localPanDelta(t.clientX - panStartX, t.clientY - panStartY);
+    zoomX = panStartOffsetX + d.dx / zoomScale;
+    zoomY = panStartOffsetY + d.dy / zoomScale;
     clampPan();
     applyZoomTransform(false);
     return;
   }
   if(!dragging) return;
   const t = e.touches[0];
-  const dx = t.clientX - dragStartX;
+  const lx = localSwipeX(t.clientX, t.clientY);
+  const dx = lx - dragStartX;
   if(Math.abs(dx) > 6) moved = true;
   const now = performance.now();
   const dt = now - lastMoveT;
-  if(dt > 0) velocity = (t.clientX - lastMoveX) / dt;
-  lastMoveX = t.clientX;
+  if(dt > 0) velocity = (lx - lastMoveX) / dt;
+  lastMoveX = lx;
   lastMoveT = now;
 
   let effectiveDx = dx;
@@ -459,10 +503,12 @@ stageViewport.addEventListener('touchend', e=>{
   const dx = lastMoveX - dragStartX;
 
   if(!moved){
-    // treat as a tap: left ~40% = prev, right ~40% = next
+    // treat as a tap: left ~40% = prev, right ~40% = next (along whichever
+    // real screen axis currently corresponds to the page-turn direction)
     const rect = stageViewport.getBoundingClientRect();
-    const tapX = lastMoveX - rect.left;
-    const ratio = tapX / rect.width;
+    const ratio = isRotatedView()
+      ? (lastMoveX - rect.top) / rect.height
+      : (lastMoveX - rect.left) / rect.width;
     if(ratio < 0.4) goPrev();
     else if(ratio > 0.6) goNext();
     else {
@@ -495,5 +541,5 @@ document.addEventListener('keydown', e=>{
 });
 
 // orientation / resize -> rebuild slides for the new mode, keep reading position
-window.addEventListener('resize', applyLayoutMode);
-window.addEventListener('orientationchange', applyLayoutMode);
+window.addEventListener('resize', ()=>{ updateForceLandscapeVisual(); applyLayoutMode(); });
+window.addEventListener('orientationchange', ()=>{ updateForceLandscapeVisual(); applyLayoutMode(); });
