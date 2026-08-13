@@ -122,6 +122,11 @@
     display:inline-block; max-width:100%;
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   }
+  .book-series{
+    text-align:center; margin-top:-4px; font-size:10px; font-weight:600;
+    color: var(--momo-rose-deep); opacity:.85;
+    width: 112px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
 
   @media (orientation: landscape){
     .app-logo{ margin: 2px 0; }
@@ -135,6 +140,7 @@
     .shelf-board{ width: 100%; padding: 16px 14px 0; }
     .book-cover{ width: 92px; height: 92px; }
     .book-label{ width: 92px; }
+    .book-series{ width: 92px; }
   }
   .shelf-footer{
     padding: 14px 0 max(18px, env(safe-area-inset-bottom));
@@ -292,7 +298,25 @@
   }
   .end-card.visible{ display:flex; }
   .end-card p{ font-size:16px; font-weight:700; }
-  .end-card button{
-    padding:11px 28px; border-radius:999px; border:none; font-size:14px; font-weight:700;
-    background: var(--forest-green); color:#fff; box-shadow:0 6px 14px rgba(0,0,0,0.15);
+  .end-card-buttons{ display:flex; gap:10px; }
+  .end-btn{
+    padding:11px 22px; border-radius:999px; border:none; font-size:13.5px; font-weight:700;
+    box-shadow:0 6px 14px rgba(0,0,0,0.15); font-family:inherit; cursor:pointer;
   }
+  .end-btn-primary{ background: var(--forest-green); color:#fff; }
+  .end-btn-secondary{ background: rgba(255,255,255,0.9); color: var(--ink); }
+
+  /* ---------- READER LOADING SPINNER ---------- */
+  .reader-loading{
+    position:absolute; inset:0; z-index:25; display:none;
+    align-items:center; justify-content:center;
+    background: var(--cream-deep);
+  }
+  .reader-loading.visible{ display:flex; }
+  .spinner{
+    width:38px; height:38px; border-radius:50%;
+    border: 4px solid rgba(107,74,58,0.18);
+    border-top-color: var(--momo-rose-deep);
+    animation: spin .8s linear infinite;
+  }
+  @keyframes spin{ to{ transform: rotate(360deg); } }

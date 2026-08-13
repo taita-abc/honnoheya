@@ -26,12 +26,29 @@ const jumpInput = document.getElementById('jumpInput');
 const jumpCancelBtn = document.getElementById('jumpCancelBtn');
 const jumpGoBtn = document.getElementById('jumpGoBtn');
 const orientToggleBtn = document.getElementById('orientToggleBtn');
+const readerLoading = document.getElementById('readerLoading');
 
 // pages beyond this count also get a drag-slider in addition to tap-to-jump
 const SLIDER_PAGE_THRESHOLD = 30;
 
 // manual たて/よこ override, for when the device's own rotation lock is on
 let manualLandscape = false;
+
+// ---- resume-from-last-position, per book ----
+let currentBookId = null;
+const PROGRESS_KEY_PREFIX = 'honnoheya_progress_';
+function saveProgress(bookId, pageIdx){
+  try{ localStorage.setItem(PROGRESS_KEY_PREFIX + bookId, String(pageIdx)); }catch(err){ /* ignore (e.g. private mode) */ }
+}
+function loadProgress(bookId, maxIdx){
+  try{
+    const v = localStorage.getItem(PROGRESS_KEY_PREFIX + bookId);
+    if(v == null) return 0;
+    const n = parseInt(v, 10);
+    if(isNaN(n)) return 0;
+    return Math.max(0, Math.min(maxIdx, n));
+  }catch(err){ return 0; }
+}
 
 function requestAppFullscreen(){
   const el = document.documentElement;
@@ -55,6 +72,12 @@ function renderBookCover(book){
   label.appendChild(labelSpan);
   wrap.appendChild(cover);
   wrap.appendChild(label);
+  if(book.series){
+    const seriesEl = document.createElement('div');
+    seriesEl.className = 'book-series';
+    seriesEl.textContent = book.series;
+    wrap.appendChild(seriesEl);
+  }
   return wrap;
 }
 
@@ -63,7 +86,7 @@ const photoItems = BOOKS.filter(b => b.type === 'photos');
 bookItems.forEach(b => shelfBoardBooks.appendChild(renderBookCover(b)));
 photoItems.forEach(b => shelfBoardPhotos.appendChild(renderBookCover(b)));
 
-shelfFooter.textContent = `ぷろとたいぷ v0.7 ・ えほん${bookItems.length}さつ / アルバム${photoItems.length}さつ`;
+shelfFooter.textContent = `v1.7 ・ ぞうちくちゅう ・ えほん${bookItems.length}さつ / アルバム${photoItems.length}さつ`;
 
 // ---- real-book page pairing: front cover alone, back cover alone, everything
 // else paired sequentially; a leftover odd middle page pairs with a blank
@@ -219,6 +242,7 @@ function syncStateFromIndex(){
   updateDots();
   updateSlider();
   endCard.classList.remove('visible');
+  if(currentBookId) saveProgress(currentBookId, current);
 }
 
 function stageWidth(){
@@ -262,14 +286,17 @@ function applyLayoutMode(){
 
 async function openReader(bookId){
   const book = BOOKS.find(b => b.id === bookId);
+  currentBookId = bookId;
   PAGES = book.pages;
   total = PAGES.length;
-  current = 0;
   spreads = book.pageStyle === 'plain' ? buildSpreadsPlain(total) : buildSpreads(total);
-  spreadIdx = 0;
-  index = 0;
+  current = loadProgress(bookId, total - 1);
+  spreadIdx = spreadIndexForPage(current);
+  index = current;
   endCard.classList.remove('visible');
+  readerLoading.classList.add('visible');
   IMG_DIMS = await Promise.all(PAGES.map(loadImageDims));
+  readerLoading.classList.remove('visible');
   updateForceLandscapeVisual();
   applyLayoutMode();
   shelfScreen.style.opacity = '0';
@@ -294,6 +321,7 @@ function goPrev(){
 
 document.getElementById('closeBtn').addEventListener('click', closeReader);
 document.getElementById('backToShelfBtn').addEventListener('click', closeReader);
+document.getElementById('restartBtn').addEventListener('click', ()=>{ goToIndex(0); });
 orientToggleBtn.addEventListener('click', ()=>{
   manualLandscape = !manualLandscape;
   updateForceLandscapeVisual();
