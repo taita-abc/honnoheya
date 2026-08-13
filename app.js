@@ -28,9 +28,6 @@ const jumpGoBtn = document.getElementById('jumpGoBtn');
 const orientToggleBtn = document.getElementById('orientToggleBtn');
 const readerLoading = document.getElementById('readerLoading');
 
-// pages beyond this count also get a drag-slider in addition to tap-to-jump
-const SLIDER_PAGE_THRESHOLD = 30;
-
 // manual たて/よこ override, for when the device's own rotation lock is on
 let manualLandscape = false;
 
@@ -80,7 +77,7 @@ const photoItems = BOOKS.filter(b => b.type === 'photos');
 bookItems.forEach(b => shelfBoardBooks.appendChild(renderBookCover(b)));
 photoItems.forEach(b => shelfBoardPhotos.appendChild(renderBookCover(b)));
 
-shelfFooter.textContent = `v1.9 ・ ぞうちくちゅう ・ えほん${bookItems.length}さつ / アルバム${photoItems.length}さつ`;
+shelfFooter.textContent = `v2.0 ・ ぞうちくちゅう ・ えほん${bookItems.length}さつ / アルバム${photoItems.length}さつ`;
 
 // ---- real-book page pairing: front cover alone, back cover alone, everything
 // else paired sequentially; a leftover odd middle page pairs with a blank
@@ -196,11 +193,6 @@ function buildSlides(){
 
 function updateDots(){
   dotsEl.innerHTML = '';
-  for(let i=0;i<slideCount;i++){
-    const d = document.createElement('div');
-    d.className = 'dot' + (i===index ? ' on' : '');
-    dotsEl.appendChild(d);
-  }
 }
 
 function updateIndicator(){
@@ -220,7 +212,7 @@ function updateIndicator(){
 function updateSlider(){
   pageSlider.max = Math.max(0, slideCount-1);
   pageSlider.value = index;
-  pageSliderWrap.classList.toggle('visible', total > SLIDER_PAGE_THRESHOLD);
+  pageSliderWrap.classList.toggle('visible', slideCount > 1);
 }
 
 function syncStateFromIndex(){

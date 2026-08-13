@@ -280,8 +280,7 @@
   .spread-half img{ width:100%; height:100%; object-fit:contain; display:block; background: var(--cream-deep); }
 
   .dots{
-    position:absolute; left:0; right:0; bottom: max(10px, env(safe-area-inset-bottom)); z-index:20;
-    display:flex; justify-content:center; gap:4px;
+    display:none;
   }
   .dot{ width:5px; height:5px; border-radius:50%; background: rgba(107,74,58,0.25); }
   .dot.on{ background: var(--momo-rose-deep); }
