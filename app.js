@@ -30,6 +30,7 @@ const readerLoading = document.getElementById('readerLoading');
 
 // manual たて/よこ override, for when the device's own rotation lock is on
 let manualLandscape = false;
+let lastNaturalOrientation = window.matchMedia('(orientation: landscape)').matches;
 
 // ---- resume-from-last-position, per book ----
 let currentBookId = null;
@@ -77,7 +78,7 @@ const photoItems = BOOKS.filter(b => b.type === 'photos');
 bookItems.forEach(b => shelfBoardBooks.appendChild(renderBookCover(b)));
 photoItems.forEach(b => shelfBoardPhotos.appendChild(renderBookCover(b)));
 
-shelfFooter.textContent = `v2.1 ・ ぞうちくちゅう ・ えほん${bookItems.length}さつ / アルバム${photoItems.length}さつ`;
+shelfFooter.textContent = `v2.2 ・ ぞうちくちゅう ・ えほん${bookItems.length}さつ / アルバム${photoItems.length}さつ`;
 
 // ---- real-book page pairing: front cover alone, back cover alone, everything
 // else paired sequentially; a leftover odd middle page pairs with a blank
@@ -565,5 +566,16 @@ document.addEventListener('keydown', e=>{
 });
 
 // orientation / resize -> rebuild slides for the new mode, keep reading position
-window.addEventListener('resize', ()=>{ updateForceLandscapeVisual(); applyLayoutMode(); });
-window.addEventListener('orientationchange', ()=>{ updateForceLandscapeVisual(); applyLayoutMode(); });
+function handleRealResizeOrRotate(){
+  const nowNatural = deviceIsNaturallyLandscape();
+  if(nowNatural !== lastNaturalOrientation){
+    // the device itself actually rotated - drop any manual たて/よこ override
+    // so the app doesn't get "stuck" ignoring real rotation afterwards
+    manualLandscape = false;
+    lastNaturalOrientation = nowNatural;
+  }
+  updateForceLandscapeVisual();
+  applyLayoutMode();
+}
+window.addEventListener('resize', handleRealResizeOrRotate);
+window.addEventListener('orientationchange', handleRealResizeOrRotate);
