@@ -78,7 +78,7 @@ const photoItems = BOOKS.filter(b => b.type === 'photos');
 bookItems.forEach(b => shelfBoardBooks.appendChild(renderBookCover(b)));
 photoItems.forEach(b => shelfBoardPhotos.appendChild(renderBookCover(b)));
 
-shelfFooter.textContent = `v2.2 ・ ぞうちくちゅう ・ えほん${bookItems.length}さつ / アルバム${photoItems.length}さつ`;
+shelfFooter.textContent = `v2.3 ・ ぞうちくちゅう ・ えほん${bookItems.length}さつ / アルバム${photoItems.length}さつ`;
 
 // ---- real-book page pairing: front cover alone, back cover alone, everything
 // else paired sequentially; a leftover odd middle page pairs with a blank
@@ -139,11 +139,28 @@ function loadImageDims(src){
 // ---- build the slide track for the current orientation mode. Each slide is
 // exactly the viewport width (so neighbors never peek in at rest); content
 // inside is sized to each image's real aspect ratio and centered ----
+// large albums: only the pages near the current one actually get an image
+// src set (freed again once far enough away), so opening a 200+ photo album
+// doesn't decode all of them into memory at once. Small books just load
+// everything up front as before - simplest and zero flicker risk.
+const EAGER_LOAD_MAX = 20;
+const LOAD_RADIUS = 2;
+const UNLOAD_RADIUS = 4;
+let slideImgEls = []; // slideImgEls[slideIndex] = [<img>, ...] for that slide
+
 function buildSlides(){
   stageTrack.innerHTML = '';
+  slideImgEls = [];
   const landscape = isLandscape();
   const vh = stageHeight();
   const vw = stageWidth();
+
+  function makeImg(src){
+    const img = document.createElement('img');
+    img.alt = '';
+    img.dataset.src = src;
+    return img;
+  }
 
   if(landscape){
     slideCount = spreads.length;
@@ -151,6 +168,7 @@ function buildSlides(){
       const slide = document.createElement('div');
       slide.className = 'slide';
       slide.style.width = vw + 'px';
+      const imgRefs = [];
       if(s.length === 2){
         const p0 = s[0], p1 = s[1];
         const realDim = (p0 != null ? IMG_DIMS[p0] : null) || (p1 != null ? IMG_DIMS[p1] : null) || {w:1,h:1};
@@ -161,13 +179,14 @@ function buildSlides(){
         let pairH = vh;
         let pairW = w0 + w1;
         if(pairW > vw){ const scale = vw / pairW; w0 *= scale; w1 *= scale; pairH *= scale; pairW = vw; }
-        const leftContent = p0 != null ? `<img src="${PAGES[p0]}" alt="">` : '';
-        const rightContent = p1 != null ? `<img src="${PAGES[p1]}" alt="">` : '';
         slide.innerHTML = `
           <div class="spread-pair" style="width:${pairW}px;height:${pairH}px;">
-            <div class="spread-half left" style="width:${w0}px;height:${pairH}px;">${leftContent}</div>
-            <div class="spread-half right" style="width:${w1}px;height:${pairH}px;">${rightContent}</div>
+            <div class="spread-half left" style="width:${w0}px;height:${pairH}px;"></div>
+            <div class="spread-half right" style="width:${w1}px;height:${pairH}px;"></div>
           </div>`;
+        const halves = slide.querySelectorAll('.spread-half');
+        if(p0 != null){ const img = makeImg(PAGES[p0]); halves[0].appendChild(img); imgRefs.push(img); }
+        if(p1 != null){ const img = makeImg(PAGES[p1]); halves[1].appendChild(img); imgRefs.push(img); }
       } else {
         const d0 = IMG_DIMS[s[0]] || {w:1,h:1};
         let w0 = vh * (d0.w / d0.h);
@@ -175,10 +194,15 @@ function buildSlides(){
         if(w0 > vw){ const scale = vw / w0; w0 = vw; h0 *= scale; }
         slide.innerHTML = `
           <div class="spread-pair cover-only" style="width:${w0}px;height:${h0}px;">
-            <div class="spread-half right" style="width:${w0}px;height:${h0}px;"><img src="${PAGES[s[0]]}" alt=""></div>
+            <div class="spread-half right" style="width:${w0}px;height:${h0}px;"></div>
           </div>`;
+        const half = slide.querySelector('.spread-half');
+        const img = makeImg(PAGES[s[0]]);
+        half.appendChild(img);
+        imgRefs.push(img);
       }
       stageTrack.appendChild(slide);
+      slideImgEls.push(imgRefs);
     });
   } else {
     slideCount = total;
@@ -186,10 +210,33 @@ function buildSlides(){
       const slide = document.createElement('div');
       slide.className = 'slide';
       slide.style.width = vw + 'px';
-      slide.innerHTML = `<div class="page-square" style="width:100%;height:100%;"><img src="${src}" alt=""></div>`;
+      slide.innerHTML = `<div class="page-square" style="width:100%;height:100%;"></div>`;
+      const wrap = slide.querySelector('.page-square');
+      const img = makeImg(src);
+      wrap.appendChild(img);
       stageTrack.appendChild(slide);
+      slideImgEls.push([img]);
     });
   }
+}
+
+// populate/free <img src> for whichever slides are near the current index;
+// called after every navigation (see syncStateFromIndex), always with an
+// up-to-date `index` for the current orientation mode
+function applyLoadWindow(){
+  const eagerAll = total <= EAGER_LOAD_MAX;
+  slideImgEls.forEach((refs, i)=>{
+    const dist = Math.abs(i - index);
+    const shouldLoad = eagerAll || dist <= LOAD_RADIUS;
+    const shouldUnload = !eagerAll && dist > UNLOAD_RADIUS;
+    refs.forEach(img=>{
+      if(shouldLoad){
+        if(img.getAttribute('src') !== img.dataset.src) img.src = img.dataset.src;
+      } else if(shouldUnload && img.hasAttribute('src')){
+        img.removeAttribute('src');
+      }
+    });
+  });
 }
 
 function updateDots(){
@@ -228,6 +275,7 @@ function syncStateFromIndex(){
   updateIndicator();
   updateDots();
   updateSlider();
+  applyLoadWindow();
   endCard.classList.remove('visible');
   if(currentBookId) saveProgress(currentBookId, current);
 }
